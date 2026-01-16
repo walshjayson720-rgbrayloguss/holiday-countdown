@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Holiday Countdown</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+html { scroll-snap-type: y mandatory; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  overflow-x: hidden;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  background: #020617;
+  padding: 12px;
+  text-align: center;
+  font-size: 1.3rem;
+  z-index: 10;
+}
+
+select {
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+}
+
+.section {
+  scroll-snap-align: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.5s;
+}
+
+.icon { font-size: 4rem; }
+.holiday-name { font-size: 2.6rem; }
+.date { opacity: 0.8; margin: 10px 0; }
+
+.timer {
+  font-size: 2rem;
+  background: #020617;
+  padding: 15px 30px;
+  border-radius: 14px;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #020617;
+  padding: 18px;
+  border-radius: 14px;
+  width: 230px;
+  z-index: 20;
+}
+
+/* Animation particles */
+.particle {
+  position: fixed;
+  top: -10px;
+  animation: fall linear infinite;
+  pointer-events: none;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  Holiday Countdown
+  <br>
+  <select id="countrySelect">
+    <option value="us">United States</option>
+  </select>
+</header>
+
+<div class="sidebar">
+  <strong>Next Holiday</strong>
+  <div id="nextName"></div>
+  <div id="nextTimer"></div>
+</div>
+
+<div id="holidays"></div>
+
+<script>
+const holidaySets = {
+  us: [
+    { name:"New Year's Day", m:0, d:1, icon:"🎉", color:"#1e293b", fx:"fireworks" },
+    { name:"MLK Day", m:0, d:15, icon:"✊", color:"#312e81" },
+    { name:"Valentine's Day", m:1, d:14, icon:"❤️", color:"#831843" },
+    { name:"Presidents' Day", m:1, d:19, icon:"🇺🇸", color:"#1e3a8a" },
+    { name:"Easter", m:3, d:20, icon:"🐣", color:"#7c3aed" },
+    { name:"Memorial Day", m:4, d:27, icon:"🕊️", color:"#334155" },
+    { name:"Juneteenth", m:5, d:19, icon:"🟥", color:"#7f1d1d" },
+    { name:"Independence Day", m:6, d:4, icon:"🎆", color:"#1e40af", fx:"fireworks" },
+    { name:"Labor Day", m:8, d:2, icon:"⚙️", color:"#1f2937" },
+    { name:"Columbus Day", m:9, d:14, icon:"🧭", color:"#78350f" },
+    { name:"Halloween", m:9, d:31, icon:"🎃", color:"#7c2d12", fx:"leaves" },
+    { name:"Veterans Day", m:10, d:11, icon:"🎖️", color:"#1e3a8a" },
+    { name:"Thanksgiving", m:10, d:28, icon:"🦃", color:"#78350f", fx:"leaves" },
+    { name:"Christmas", m:11, d:25, icon:"🎄", color:"#14532d", fx:"snow" }
+  ]
+};
+
+let upcoming = [];
+
+function build() {
+  document.getElementById("holidays").innerHTML = "";
+  const now = new Date();
+  const year = now.getFullYear();
+
+  upcoming = holidaySets.us.map(h => {
+    let date = new Date(year, h.m, h.d);
+    if (date < now) date = new Date(year + 1, h.m, h.d);
+    return { ...h, date };
+  }).sort((a,b)=>a.date-b.date);
+
+  upcoming.forEach((h,i)=>{
+    const s = document.createElement("div");
+    s.className = "section";
+    s.style.background = h.color;
+    s.innerHTML = `
+      <div class="icon">${h.icon}</div>
+      <div class="holiday-name">${h.name}</div>
+      <div class="date">${h.date.toDateString()}</div>
+      <div class="timer" id="t${i}"></div>
+    `;
+    document.getElementById("holidays").appendChild(s);
+  });
+
+  startFX(upcoming[0].fx);
+}
+
+function format(ms){
+  const d=Math.floor(ms/86400000);
+  const h=Math.floor(ms/3600000)%24;
+  const m=Math.floor(ms/60000)%60;
+  const s=Math.floor(ms/1000)%60;
+  return `${d}d ${h}h ${m}m ${s}s`;
+}
+
+function update(){
+  const now=new Date();
+  upcoming.forEach((h,i)=>{
+    document.getElementById("t"+i).textContent =
+      h.date-now<=0?"It's today!":format(h.date-now);
+  });
+
+  document.getElementById("nextName").textContent = upcoming[0].name;
+  document.getElementById("nextTimer").textContent = format(upcoming[0].date-now);
+}
+
+function startFX(type){
+  document.querySelectorAll(".particle").forEach(p=>p.remove());
+  if(!type) return;
+
+  for(let i=0;i<40;i++){
+    const p=document.createElement("div");
+    p.className="particle";
+    p.textContent= type==="snow"?"❄️":type==="leaves"?"🍂":"🎆";
+    p.style.left=Math.random()*100+"vw";
+    p.style.animationDuration=3+Math.random()*5+"s";
+    document.body.appendChild(p);
+  }
+}
+
+build();
+update();
+setInterval(update,1000);
+</script>
+
+</body>
+</html>
